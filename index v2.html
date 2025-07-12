@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>畫畫圖</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #111827;
+            color: #e5e7eb;
+        }
+        .card {
+            background-color: #1f2937;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-secondary {
+            background-color: #4b5563;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #374151;
+        }
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        .form-input, .form-select {
+            width: 100%;
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            color: #e5e7eb;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl sm:text-5xl font-bold text-white">畫畫圖</h1>
+            <p class="text-lg sm:text-xl text-gray-400 mt-2">想畫就畫，隨便想、隨便畫</p>
+        </header>
+
+        <main>
+            <!-- Controls Card -->
+            <div class="card">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="prompt" class="block mb-2 font-medium text-gray-300">提示詞</label>
+                        <input type="text" id="prompt" class="form-input" placeholder="例如：一隻貓在月球上">
+                    </div>
+                    <div>
+                        <label for="style" class="block mb-2 font-medium text-gray-300">風格</label>
+                        <select id="style" class="form-select">
+                            <option value=", Japanese Anime Style">日本動漫風格</option>
+                            <option value=", Classic Oil Painting">古典油畫風</option>
+                            <option value=", Fantasy Style">奇幻風格</option>
+                            <option value=", Sci-fi Style">科幻風格</option>
+                            <option value=", Watercolor Style">水彩畫風</option>
+                            <option value=", Cyberpunk Futuristic Style">賽博龐克風</option>
+                            <option value=", Fairy Tale Illustration">童話插畫風</option>
+                            <option value=", Hand-drawn Comic Style">手繪漫畫風</option>
+                            <option value=", Minimalist Illustration">簡筆插畫風</option>
+                            <option value=", Pixel Art">像素藝術風</option>
+                            <option value=", Abstract Art">抽象藝術風</option>
+                            <option value=", 1980s Retro Style">復古風</option>
+                            <option value=", Ghibli Style">吉卜力畫風</option>
+                            <option value=", Sketch Style">素描風格</option>
+                            <option value=", Realistic Photography">真實攝影</option>
+                            <option value=", Pixar Style">皮克斯風格</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="size" class="block mb-2 font-medium text-gray-300">圖片大小</label>
+                        <select id="size" class="form-select">
+                            <option value="1920x1080">1920x1080</option>
+                            <option value="1080x1920">1080x1920</option>
+                            <option value="1024x1024" selected>1024x1024</option>
+                            <option value="512x768">512x768</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="count" class="block mb-2 font-medium text-gray-300">生成張數</label>
+                            <input type="number" id="count" class="form-input" value="1" min="1" max="5">
+                        </div>
+                        <div>
+                            <label for="seed" class="block mb-2 font-medium text-gray-300">亂數種子</label>
+                            <input type="number" id="seed" class="form-input" value="42">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <button id="generate-btn" class="btn btn-primary w-full md:w-auto">
+                        <span id="btn-text">生成圖片</span>
+                        <div id="spinner" class="spinner ml-2 hidden"></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Card -->
+            <div id="results-card" class="card hidden">
+                <h2 class="text-2xl font-bold mb-4 text-white">生成結果</h2>
+                <div id="results-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- Image History Card -->
+            <div id="image-history-card" class="card hidden">
+                 <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-white">圖片歷史紀錄</h2>
+                    <button id="clear-image-history-btn" class="btn btn-danger btn-sm">清除圖片歷史紀錄</button>
+                </div>
+                <div id="image-history-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- Prompt History Card -->
+            <div id="prompt-history-card" class="card hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-white">提示詞歷史紀錄</h2>
+                    <button id="clear-prompt-history-btn" class="btn btn-danger btn-sm">清除提示詞歷史紀錄</button>
+                </div>
+                <ul id="prompt-history-list" class="space-y-2"></ul>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const promptInput = document.getElementById('prompt');
+            const styleSelect = document.getElementById('style');
+            const sizeSelect = document.getElementById('size');
+            const countInput = document.getElementById('count');
+            const seedInput = document.getElementById('seed');
+            const generateBtn = document.getElementById('generate-btn');
+            const btnText = document.getElementById('btn-text');
+            const spinner = document.getElementById('spinner');
+
+            const resultsCard = document.getElementById('results-card');
+            const resultsGrid = document.getElementById('results-grid');
+
+            const imageHistoryCard = document.getElementById('image-history-card');
+            const imageHistoryGrid = document.getElementById('image-history-grid');
+            const clearImageHistoryBtn = document.getElementById('clear-image-history-btn');
+
+            const promptHistoryCard = document.getElementById('prompt-history-card');
+            const promptHistoryList = document.getElementById('prompt-history-list');
+            const clearPromptHistoryBtn = document.getElementById('clear-prompt-history-btn');
+
+            // Load from Local Storage
+            loadHistories();
+
+            // Event Listeners
+            generateBtn.addEventListener('click', generateImages);
+            clearImageHistoryBtn.addEventListener('click', clearImageHistory);
+            clearPromptHistoryBtn.addEventListener('click', clearPromptHistory);
+            promptHistoryList.addEventListener('click', (e) => {
+                if (e.target.tagName === 'LI') {
+                    const [prompt, style] = e.target.dataset.value.split('||');
+                    promptInput.value = prompt;
+                    styleSelect.value = style;
+                }
+            });
+
+            function setUILoading(isLoading) {
+                if (isLoading) {
+                    generateBtn.disabled = true;
+                    btnText.textContent = '生成中...';
+                    spinner.classList.remove('hidden');
+                } else {
+                    generateBtn.disabled = false;
+                    btnText.textContent = '生成圖片';
+                    spinner.classList.add('hidden');
+                }
+            }
+
+            function generateImages() {
+                const prompt = promptInput.value.trim();
+                if (!prompt) {
+                    alert('請輸入提示詞！');
+                    return;
+                }
+
+                setUILoading(true);
+
+                // Move current results to history
+                const currentImages = Array.from(resultsGrid.children);
+                if (currentImages.length > 0) {
+                    imageHistoryCard.classList.remove('hidden');
+                    currentImages.forEach(imgCard => {
+                        imageHistoryGrid.prepend(imgCard);
+                    });
+                    saveImageHistory();
+                }
+                resultsGrid.innerHTML = '';
+
+                const style = styleSelect.value;
+                const [width, height] = sizeSelect.value.split('x');
+                const count = parseInt(countInput.value, 10);
+                const seed = parseInt(seedInput.value, 10);
+
+                const fullPrompt = `${prompt}${style}`;
+                addPromptToHistory(prompt, style);
+                
+                resultsCard.classList.remove('hidden');
+
+                let imagesLoaded = 0;
+                for (let i = 0; i < count; i++) {
+                    const currentSeed = seed + i;
+                    const encodedPrompt = encodeURIComponent(fullPrompt);
+                    const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=${width}&height=${height}&seed=${currentSeed}&nologo=true`;
+                    
+                    const imageCard = createImageCard(imageUrl);
+                    resultsGrid.appendChild(imageCard);
+
+                    const img = imageCard.querySelector('img');
+                    img.onload = () => {
+                        imagesLoaded++;
+                        if (imagesLoaded === count) {
+                            setUILoading(false);
+                        }
+                    };
+                    img.onerror = () => {
+                        imagesLoaded++;
+                        img.alt = '圖片加載失敗';
+                        img.nextElementSibling.textContent = '加載失敗';
+                        if (imagesLoaded === count) {
+                            setUILoading(false);
+                        }
+                    };
+                }
+            }
+
+            function createImageCard(imageUrl) {
+                const card = document.createElement('div');
+                card.className = 'relative group bg-gray-800 rounded-lg overflow-hidden';
+                
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = '生成中的圖片...';
+                img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105';
+
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.className = 'absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center';
+                loadingOverlay.innerHTML = '<div class="spinner"></div>';
+                
+                img.onload = () => loadingOverlay.classList.add('hidden');
+                img.onerror = () => {
+                    loadingOverlay.innerHTML = '<p class="text-red-400">加載失敗</p>';
+                }
+
+                const overlay = document.createElement('div');
+                overlay.className = 'absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4';
+
+                const newTabBtn = document.createElement('a');
+                newTabBtn.href = imageUrl;
+                newTabBtn.target = '_blank';
+                newTabBtn.className = 'btn btn-secondary';
+                newTabBtn.textContent = '新分頁開啟';
+
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'btn btn-secondary';
+                downloadBtn.textContent = '下載';
+                downloadBtn.onclick = () => downloadImage(imageUrl);
+
+                overlay.appendChild(newTabBtn);
+                overlay.appendChild(downloadBtn);
+                card.appendChild(img);
+                card.appendChild(loadingOverlay);
+                card.appendChild(overlay);
+
+                return card;
+            }
+
+            async function downloadImage(imageUrl) {
+                try {
+                    // Using fetch in a try-catch. If CORS fails, it will fall back to opening a new tab.
+                    const response = await fetch(imageUrl);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `gemini-art-${new Date().getTime()}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                } catch (error) {
+                    console.error('Download failed due to CORS or other issue, opening in new tab as fallback.', error);
+                    window.open(imageUrl, '_blank');
+                }
+            }
+
+            function addPromptToHistory(prompt, style) {
+                const value = `${prompt}||${style}`;
+                const existingPrompts = Array.from(promptHistoryList.children).map(li => li.dataset.value);
+                if (existingPrompts.includes(value)) return;
+
+                promptHistoryCard.classList.remove('hidden');
+                const li = document.createElement('li');
+                li.className = 'p-2 bg-gray-700 rounded cursor-pointer hover:bg-gray-600';
+                li.textContent = `${prompt} (${styleSelect.options[styleSelect.selectedIndex].text})`;
+                li.dataset.value = value;
+                promptHistoryList.prepend(li);
+                savePromptHistory();
+            }
+
+            function clearImageHistory() {
+                imageHistoryGrid.innerHTML = '';
+                imageHistoryCard.classList.add('hidden');
+                localStorage.removeItem('imageHistory');
+            }
+
+            function clearPromptHistory() {
+                promptHistoryList.innerHTML = '';
+                promptHistoryCard.classList.add('hidden');
+                localStorage.removeItem('promptHistory');
+            }
+
+            function saveImageHistory() {
+                localStorage.setItem('imageHistory', imageHistoryGrid.innerHTML);
+            }
+
+            function savePromptHistory() {
+                localStorage.setItem('promptHistory', promptHistoryList.innerHTML);
+            }
+
+            function loadHistories() {
+                const savedImageHistory = localStorage.getItem('imageHistory');
+                if (savedImageHistory) {
+                    imageHistoryCard.classList.remove('hidden');
+                    imageHistoryGrid.innerHTML = savedImageHistory;
+                    // Re-attach download listeners after loading from storage
+                    imageHistoryGrid.querySelectorAll('button').forEach(button => {
+                        if (button.textContent === '下載') {
+                            const imageUrl = button.parentElement.parentElement.querySelector('img').src;
+                            button.onclick = () => downloadImage(imageUrl);
+                        }
+                    });
+                }
+
+                const savedPromptHistory = localStorage.getItem('promptHistory');
+                if (savedPromptHistory) {
+                    promptHistoryCard.classList.remove('hidden');
+                    promptHistoryList.innerHTML = savedPromptHistory;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
