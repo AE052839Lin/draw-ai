@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>畫畫圖</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+        }
+        .card {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #4a4a4a;
+            color: #f0f0f0;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #6a6a6a;
+        }
+        .btn:disabled {
+            background-color: #3a3a3a;
+            cursor: not-allowed;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold">畫畫圖</h1>
+        <p class="text-lg text-gray-400">想畫就畫，隨便想、隨便畫</p>
+    </div>
+
+    <div class="max-w-4xl mx-auto">
+        <div class="card">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="prompt" class="block mb-2">提示詞 (Prompt)</label>
+                    <input type="text" id="prompt" class="w-full p-2 rounded bg-gray-700 border border-gray-600" placeholder="輸入你想畫的內容...">
+                </div>
+                <div>
+                    <label for="style" class="block mb-2">風格</label>
+                    <select id="style" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                        <option value="realistic">真實攝影</option>
+                        <option value="anime">日本動漫風格</option>
+                        <option value="oil painting">古典油畫</option>
+                        <option value="fantasy">奇幻風格</option>
+                        <option value="sci-fi">科幻風格</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="imageSize" class="block mb-2">圖片尺寸</label>
+                    <select id="imageSize" class="w-full p-2 rounded bg-gray-700 border border-gray-600">
+                        <option value="1920x1080">1920x1080</option>
+                        <option value="1080x1920">1080x1920</option>
+                        <option value="1024x1024" selected>1024x1024</option>
+                        <option value="512x768">512x768</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="numImages" class="block mb-2">生成數量</label>
+                    <input type="number" id="numImages" class="w-full p-2 rounded bg-gray-700 border border-gray-600" value="1" min="1" max="5">
+                </div>
+                <div>
+                    <label for="seed" class="block mb-2">隨機種子</label>
+                    <input type="number" id="seed" class="w-full p-2 rounded bg-gray-700 border border-gray-600" value="12345">
+                </div>
+            </div>
+            <div class="text-center mt-6">
+                <button id="generateBtn" class="btn">生成圖片</button>
+            </div>
+        </div>
+
+        <div id="results" class="card">
+            <h2 class="text-2xl font-bold mb-4">生成結果</h2>
+            <div id="loader" class="hidden loader"></div>
+            <div id="image-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+        </div>
+
+        <div id="history" class="card">
+            <h2 class="text-2xl font-bold mb-4">歷史紀錄</h2>
+            <div id="history-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generateBtn');
+        const loader = document.getElementById('loader');
+        const imageContainer = document.getElementById('image-container');
+        const historyContainer = document.getElementById('history-container');
+
+        generateBtn.addEventListener('click', async () => {
+            const prompt = document.getElementById('prompt').value;
+            const style = document.getElementById('style').value;
+            const imageSize = document.getElementById('imageSize').value.split('x');
+            const width = imageSize[0];
+            const height = imageSize[1];
+            const numImages = document.getElementById('numImages').value;
+            const seed = document.getElementById('seed').value;
+
+            if (!prompt) {
+                alert('請輸入提示詞！');
+                return;
+            }
+
+            // Move current results to history
+            const currentImages = imageContainer.children;
+            while (currentImages.length > 0) {
+                historyContainer.appendChild(currentImages[0]);
+            }
+
+            generateBtn.disabled = true;
+            loader.classList.remove('hidden');
+
+            // Generate and display images
+            for (let i = 0; i < numImages; i++) {
+                const currentSeed = parseInt(seed) + i;
+                const fullPrompt = `${prompt}, ${style}`;
+                const encodedPrompt = encodeURIComponent(fullPrompt);
+                const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=${width}&height=${height}&seed=${currentSeed}&nologo=true`;
+
+                // Directly use the URL with the <img> tag to avoid CORS issues with fetch
+                displayImage(imageUrl, fullPrompt);
+            }
+
+            generateBtn.disabled = false;
+            loader.classList.add('hidden');
+        });
+
+        function displayImage(url, prompt) {
+            const imgWrapper = document.createElement('div');
+            imgWrapper.className = 'relative';
+
+            const img = document.createElement('img');
+            img.src = url;
+            img.className = 'w-full h-auto rounded';
+            imgWrapper.appendChild(img);
+
+            const buttonsWrapper = document.createElement('div');
+            buttonsWrapper.className = 'absolute bottom-2 right-2 flex space-x-2';
+
+            const downloadBtn = document.createElement('a');
+            downloadBtn.href = url;
+            downloadBtn.download = `${prompt.substring(0, 20)}.png`;
+            downloadBtn.className = 'btn text-sm';
+            downloadBtn.textContent = '下載';
+            buttonsWrapper.appendChild(downloadBtn);
+
+            const openBtn = document.createElement('a');
+            openBtn.href = url;
+            openBtn.target = '_blank';
+            openBtn.className = 'btn text-sm';
+            openBtn.textContent = '新分頁開啟';
+            buttonsWrapper.appendChild(openBtn);
+
+            imgWrapper.appendChild(buttonsWrapper);
+            imageContainer.appendChild(imgWrapper);
+        }
+    </script>
+
+</body>
+</html>
